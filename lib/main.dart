@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:async';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const AvelaApp());
@@ -41,27 +43,159 @@ class _MainScreenState extends State<MainScreen> {
   late GoogleMapController mapController;
   final LatLng _center = const LatLng(37.42796133580664, -122.085749655962);
   late Set<Marker> _markers;
+  Timer? _locationUpdateTimer;
+  bool _isLiveLocation = true;
+  int _updateFrequency = 5; // minutes
 
   @override
   void initState() {
     super.initState();
+    _initializeMarkers();
+    _startLocationUpdates();
+  }
+
+  @override
+  void dispose() {
+    _locationUpdateTimer?.cancel();
+    super.dispose();
+  }
+
+  void _initializeMarkers() {
     _markers = {
       Marker(
         markerId: const MarkerId('user'),
         position: const LatLng(37.42796133580664, -122.085749655962),
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
+        infoWindow: InfoWindow(
+          title: 'You',
+          snippet: 'Current location',
+        ),
       ),
       Marker(
         markerId: const MarkerId('mom'),
         position: const LatLng(37.42896133580664, -122.084749655962),
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose),
+        infoWindow: InfoWindow(
+          title: 'Mom',
+          snippet: 'Updated 5 minutes ago',
+          onTap: () => _showContactInfo('Mom', '555-0123'),
+        ),
       ),
       Marker(
         markerId: const MarkerId('sarah'),
         position: const LatLng(37.42696133580664, -122.086749655962),
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose),
+        infoWindow: InfoWindow(
+          title: 'Sarah',
+          snippet: 'Updated 2 minutes ago',
+          onTap: () => _showContactInfo('Sarah', '555-0124'),
+        ),
       ),
     };
+  }
+
+  void _startLocationUpdates() {
+    if (_isLiveLocation) {
+      _locationUpdateTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+        _updateLocations();
+      });
+    } else {
+      _locationUpdateTimer = Timer.periodic(
+        Duration(minutes: _updateFrequency),
+        (timer) {
+          _updateLocations();
+        },
+      );
+    }
+  }
+
+  void _updateLocations() {
+    setState(() {
+      // Simulate location updates
+      _markers = _markers.map((marker) {
+        if (marker.markerId.value != 'user') {
+          final newPosition = LatLng(
+            marker.position.latitude + (0.0001 * (DateTime.now().millisecond % 2 == 0 ? 1 : -1)),
+            marker.position.longitude + (0.0001 * (DateTime.now().millisecond % 2 == 0 ? 1 : -1)),
+          );
+          return marker.copyWith(
+            positionParam: newPosition,
+            infoWindowParam: InfoWindow(
+              title: marker.infoWindow.title,
+              snippet: 'Updated just now',
+              onTap: () => _showContactInfo(
+                marker.infoWindow.title ?? '',
+                marker.markerId.value == 'mom' ? '555-0123' : '555-0124',
+              ),
+            ),
+          );
+        }
+        return marker;
+      }).toSet();
+    });
+  }
+
+  void _showContactInfo(String name, String phoneNumber) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              name,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Updated just now',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _ContactActionButton(
+                  icon: Icons.call_outlined,
+                  label: 'Call',
+                  onPressed: () => _makePhoneCall(phoneNumber),
+                ),
+                _ContactActionButton(
+                  icon: Icons.message_outlined,
+                  label: 'Message',
+                  onPressed: () => _sendMessage(phoneNumber),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: phoneNumber,
+    );
+    if (await canLaunchUrl(launchUri)) {
+      await launchUrl(launchUri);
+    }
+  }
+
+  Future<void> _sendMessage(String phoneNumber) async {
+    final Uri launchUri = Uri(
+      scheme: 'sms',
+      path: phoneNumber,
+    );
+    if (await canLaunchUrl(launchUri)) {
+      await launchUrl(launchUri);
+    }
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -145,8 +279,8 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ],
           ),
-          // Groups Screen
-          const GroupsScreen(),
+          // Circles Screen
+          const CirclesScreen(),
           // Alerts Screen
           const AlertsScreen(),
           // Settings Screen
@@ -169,7 +303,7 @@ class _MainScreenState extends State<MainScreen> {
           NavigationDestination(
             icon: Icon(Icons.group_outlined),
             selectedIcon: Icon(Icons.group),
-            label: 'Groups',
+            label: 'Circles',
           ),
           NavigationDestination(
             icon: Icon(Icons.notifications_outlined),
@@ -194,8 +328,8 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-class GroupsScreen extends StatelessWidget {
-  const GroupsScreen({super.key});
+class CirclesScreen extends StatelessWidget {
+  const CirclesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -203,15 +337,15 @@ class GroupsScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'Your Circles',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {
-              // Navigate to create group screen
+              // Show add circle/contact dialog
             },
           ),
         ],
@@ -219,22 +353,60 @@ class GroupsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _GroupCard(
+          // Groups Section
+          Text(
+            'Groups',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 16),
+          _CircleCard(
             name: 'Family',
             members: 4,
             imageUrl: 'https://i.pravatar.cc/150?img=2',
+            isGroup: true,
           ),
-          const SizedBox(height: 16),
-          _GroupCard(
+          const SizedBox(height: 12),
+          _CircleCard(
             name: 'Close Friends',
             members: 3,
             imageUrl: 'https://i.pravatar.cc/150?img=3',
+            isGroup: true,
           ),
-          const SizedBox(height: 16),
-          _GroupCard(
+          const SizedBox(height: 12),
+          _CircleCard(
             name: 'Work Team',
             members: 5,
             imageUrl: 'https://i.pravatar.cc/150?img=4',
+            isGroup: true,
+          ),
+          const SizedBox(height: 24),
+
+          // Individual Contacts Section
+          Text(
+            'Individual Contacts',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 16),
+          _CircleCard(
+            name: 'Mom',
+            imageUrl: 'https://i.pravatar.cc/150?img=5',
+            isGroup: false,
+          ),
+          const SizedBox(height: 12),
+          _CircleCard(
+            name: 'Sarah',
+            imageUrl: 'https://i.pravatar.cc/150?img=6',
+            isGroup: false,
+          ),
+          const SizedBox(height: 12),
+          _CircleCard(
+            name: 'John',
+            imageUrl: 'https://i.pravatar.cc/150?img=7',
+            isGroup: false,
           ),
         ],
       ),
@@ -242,15 +414,17 @@ class GroupsScreen extends StatelessWidget {
   }
 }
 
-class _GroupCard extends StatelessWidget {
+class _CircleCard extends StatelessWidget {
   final String name;
-  final int members;
+  final int? members;
   final String imageUrl;
+  final bool isGroup;
 
-  const _GroupCard({
+  const _CircleCard({
     required this.name,
-    required this.members,
+    this.members,
     required this.imageUrl,
+    required this.isGroup,
   });
 
   @override
@@ -269,19 +443,37 @@ class _GroupCard extends StatelessWidget {
         ),
         title: Text(
           name,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
         ),
-        subtitle: Text(
-          '$members members',
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+        subtitle: isGroup
+            ? Text(
+                '$members members',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+              )
+            : null,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.message_outlined),
+              onPressed: () {
+                // Open chat
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.call_outlined),
+              onPressed: () {
+                // Make call
+              },
+            ),
+          ],
         ),
-        trailing: const Icon(Icons.chevron_right),
         onTap: () {
-          // Navigate to group details
+          // Navigate to circle/contact details
         },
       ),
     );
@@ -476,8 +668,22 @@ class _AlertItem extends StatelessWidget {
   }
 }
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool _shareLocation = true;
+  bool _storeLocationHistory = true;
+  bool _preciseLocation = true;
+  bool _circleAlerts = true;
+  bool _sosNotifications = true;
+  bool _appUpdates = true;
+  bool _isLiveLocation = true;
+  int _updateFrequency = 5;
 
   @override
   Widget build(BuildContext context) {
@@ -485,50 +691,304 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'Settings',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
         ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _SettingsTile(
-            icon: Icons.person_outline,
-            title: 'Profile',
-            onTap: () {},
+          // User Profile Section
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: Colors.grey.withAlpha(51)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const CircleAvatar(
+                        radius: 30,
+                        backgroundImage: NetworkImage(
+                          'https://i.pravatar.cc/150?img=1',
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Sarah Johnson',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              'sarah.johnson@example.com',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(color: Colors.grey[600]),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined),
+                        onPressed: () {},
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
-          _SettingsTile(
-            icon: Icons.security_outlined,
-            title: 'Privacy & Security',
-            onTap: () {},
+          const SizedBox(height: 24),
+
+          // Privacy & Location Section
+          Text(
+            'Privacy & Location',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
           ),
-          _SettingsTile(
-            icon: Icons.notifications_outlined,
-            title: 'Notifications',
-            onTap: () {},
+          const SizedBox(height: 16),
+          _SettingsSwitchTile(
+            title: 'Share My Location',
+            subtitle: 'Let your circles see where you are',
+            value: _shareLocation,
+            onChanged: (value) {
+              setState(() {
+                _shareLocation = value;
+              });
+            },
           ),
-          _SettingsTile(
-            icon: Icons.help_outline,
-            title: 'Help & Support',
-            onTap: () {},
+          _SettingsSwitchTile(
+            title: 'Location History',
+            subtitle: 'Store your location data for 24 hours',
+            value: _storeLocationHistory,
+            onChanged: (value) {
+              setState(() {
+                _storeLocationHistory = value;
+              });
+            },
           ),
-          _SettingsTile(icon: Icons.info_outline, title: 'About', onTap: () {}),
+          _SettingsSwitchTile(
+            title: 'Precise Location',
+            subtitle: 'Show exact position on map',
+            value: _preciseLocation,
+            onChanged: (value) {
+              setState(() {
+                _preciseLocation = value;
+              });
+            },
+          ),
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: Colors.grey.withAlpha(51)),
+            ),
+            child: Column(
+              children: [
+                SwitchListTile(
+                  title: Text(
+                    'Live Location',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  subtitle: Text(
+                    'Update location in real-time',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: Colors.grey[600]),
+                  ),
+                  value: _isLiveLocation,
+                  onChanged: (value) {
+                    setState(() {
+                      _isLiveLocation = value;
+                    });
+                  },
+                ),
+                if (!_isLiveLocation) ...[
+                  const Divider(),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Update Frequency',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Slider(
+                          value: _updateFrequency.toDouble(),
+                          min: 1,
+                          max: 60,
+                          divisions: 59,
+                          label: '$_updateFrequency minutes',
+                          onChanged: (value) {
+                            setState(() {
+                              _updateFrequency = value.round();
+                            });
+                          },
+                        ),
+                        Text(
+                          'Update every $_updateFrequency minutes',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Notifications Section
+          Text(
+            'Notifications',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 16),
+          _SettingsSwitchTile(
+            title: 'Circle Alerts',
+            subtitle: 'When someone in your circle sends an alert',
+            value: _circleAlerts,
+            onChanged: (value) {
+              setState(() {
+                _circleAlerts = value;
+              });
+            },
+          ),
+          _SettingsSwitchTile(
+            title: 'SOS Notifications',
+            subtitle: 'Emergency notifications from your circles',
+            value: _sosNotifications,
+            onChanged: (value) {
+              setState(() {
+                _sosNotifications = value;
+              });
+            },
+          ),
+          _SettingsSwitchTile(
+            title: 'App Updates',
+            subtitle: 'News and feature updates from Avela',
+            value: _appUpdates,
+            onChanged: (value) {
+              setState(() {
+                _appUpdates = value;
+              });
+            },
+          ),
+          const SizedBox(height: 24),
+
+          // Emergency Contacts Section
+          Text(
+            'Emergency Contacts',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 16),
+          _EmergencyContactTile(
+            name: 'Mom',
+            role: 'Primary',
+            imageUrl: 'https://i.pravatar.cc/150?img=2',
+          ),
+          _EmergencyContactTile(
+            name: 'Sister',
+            imageUrl: 'https://i.pravatar.cc/150?img=3',
+          ),
+          TextButton.icon(
+            onPressed: () {},
+            icon: const Icon(Icons.add),
+            label: const Text('Add Emergency Contact'),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Log Out Button
+          FilledButton(
+            onPressed: () {},
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Log Out'),
+          ),
         ],
       ),
     );
   }
 }
 
-class _SettingsTile extends StatelessWidget {
-  final IconData icon;
+class _SettingsSwitchTile extends StatelessWidget {
   final String title;
-  final VoidCallback onTap;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
 
-  const _SettingsTile({
-    required this.icon,
+  const _SettingsSwitchTile({
     required this.title,
-    required this.onTap,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.withAlpha(51)),
+      ),
+      child: SwitchListTile(
+        title: Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        subtitle: Text(
+          subtitle,
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: Colors.grey[600]),
+        ),
+        value: value,
+        onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+class _EmergencyContactTile extends StatelessWidget {
+  final String name;
+  final String? role;
+  final String imageUrl;
+
+  const _EmergencyContactTile({
+    required this.name,
+    this.role,
+    required this.imageUrl,
   });
 
   @override
@@ -540,10 +1000,39 @@ class _SettingsTile extends StatelessWidget {
         side: BorderSide(color: Colors.grey.withAlpha(51)),
       ),
       child: ListTile(
-        leading: Icon(icon),
-        title: Text(title),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
+        leading: CircleAvatar(
+          backgroundImage: NetworkImage(imageUrl),
+        ),
+        title: Text(name),
+        subtitle: role != null ? Text(role!) : null,
+        trailing: IconButton(
+          icon: const Icon(Icons.edit_outlined),
+          onPressed: () {},
+        ),
+      ),
+    );
+  }
+}
+
+class _ContactActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  const _ContactActionButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon),
+      label: Text(label),
+      style: TextButton.styleFrom(
+        foregroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }
