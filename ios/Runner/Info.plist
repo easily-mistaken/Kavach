@@ -63,7 +63,7 @@
 	<key>io.flutter.embedded_views_preview</key>
 	<true/>
 	<key>GMSApiKey</key>
-	<string>YOUR_GOOGLE_MAPS_API_KEY</string>
+	<string>AIzaSyCXXlC9CTUlrTvFAxg6stSEdvwYIa68KSc</string>
 	<!-- Privacy Descriptions -->
 	<key>NSContactsUsageDescription</key>
 	<string>This app needs access to contacts to help you add trusted contacts to your safety groups.</string>
