@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 void main() {
   runApp(const AvelaApp());
@@ -20,7 +19,7 @@ class AvelaApp extends StatelessWidget {
           seedColor: const Color(0xFF6B4EFF),
           primary: const Color(0xFF6B4EFF),
           secondary: const Color(0xFFFF6B6B),
-          background: Colors.white,
+          surface: Colors.white,
         ),
         textTheme: GoogleFonts.nunitoTextTheme(),
         useMaterial3: true,
@@ -41,23 +40,29 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
   late GoogleMapController mapController;
   final LatLng _center = const LatLng(37.42796133580664, -122.085749655962);
-  final Set<Marker> _markers = {
-    const Marker(
-      markerId: MarkerId('user'),
-      position: LatLng(37.42796133580664, -122.085749655962),
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
-    ),
-    const Marker(
-      markerId: MarkerId('mom'),
-      position: LatLng(37.42896133580664, -122.084749655962),
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose),
-    ),
-    const Marker(
-      markerId: MarkerId('sarah'),
-      position: LatLng(37.42696133580664, -122.086749655962),
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose),
-    ),
-  };
+  late Set<Marker> _markers;
+
+  @override
+  void initState() {
+    super.initState();
+    _markers = {
+      Marker(
+        markerId: const MarkerId('user'),
+        position: const LatLng(37.42796133580664, -122.085749655962),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
+      ),
+      Marker(
+        markerId: const MarkerId('mom'),
+        position: const LatLng(37.42896133580664, -122.084749655962),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose),
+      ),
+      Marker(
+        markerId: const MarkerId('sarah'),
+        position: const LatLng(37.42696133580664, -122.086749655962),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose),
+      ),
+    };
+  }
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
@@ -89,7 +94,10 @@ class _MainScreenState extends State<MainScreen> {
                 left: 20,
                 right: 20,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(30),
@@ -105,7 +113,9 @@ class _MainScreenState extends State<MainScreen> {
                     children: [
                       const CircleAvatar(
                         radius: 20,
-                        backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=1'),
+                        backgroundImage: NetworkImage(
+                          'https://i.pravatar.cc/150?img=1',
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -114,15 +124,13 @@ class _MainScreenState extends State<MainScreen> {
                           children: [
                             Text(
                               'Welcome back, Sarah',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             Text(
                               'Your family is safe',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.grey[600],
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: Colors.grey[600]),
                             ),
                           ],
                         ),
@@ -195,9 +203,9 @@ class GroupsScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'Your Circles',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
@@ -213,31 +221,22 @@ class GroupsScreen extends StatelessWidget {
         children: [
           _GroupCard(
             name: 'Family',
-            activeMembers: 2,
-            members: ['M', 'D', 'S'],
+            members: 4,
             imageUrl: 'https://i.pravatar.cc/150?img=2',
           ),
           const SizedBox(height: 16),
           _GroupCard(
-            name: 'Friends',
-            activeMembers: 2,
-            members: ['E', 'S', 'M', 'J'],
+            name: 'Close Friends',
+            members: 3,
             imageUrl: 'https://i.pravatar.cc/150?img=3',
           ),
           const SizedBox(height: 16),
           _GroupCard(
-            name: 'Roommates',
-            activeMembers: 1,
-            members: ['L', 'T'],
+            name: 'Work Team',
+            members: 5,
             imageUrl: 'https://i.pravatar.cc/150?img=4',
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Navigate to create group screen
-        },
-        child: const Icon(Icons.add),
       ),
     );
   }
@@ -245,13 +244,11 @@ class GroupsScreen extends StatelessWidget {
 
 class _GroupCard extends StatelessWidget {
   final String name;
-  final int activeMembers;
-  final List<String> members;
+  final int members;
   final String imageUrl;
 
   const _GroupCard({
     required this.name,
-    required this.activeMembers,
     required this.members,
     required this.imageUrl,
   });
@@ -262,62 +259,30 @@ class _GroupCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: Colors.grey.withOpacity(0.2),
-        ),
+        side: BorderSide(color: Colors.grey.withOpacity(0.2)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundImage: NetworkImage(imageUrl),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '$activeMembers active',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: members.map((member) => CircleAvatar(
-                radius: 16,
-                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                child: Text(
-                  member,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              )).toList(),
-            ),
-          ],
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: CircleAvatar(
+          radius: 30,
+          backgroundImage: NetworkImage(imageUrl),
         ),
+        title: Text(
+          name,
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          '$members members',
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () {
+          // Navigate to group details
+        },
       ),
     );
   }
@@ -332,17 +297,26 @@ class AlertsScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'Alerts & Updates',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         actions: [
-          TextButton(
+          TextButton.icon(
             onPressed: () {},
-            child: Text(
+            icon: const Icon(Icons.check_circle_outline, size: 20),
+            label: Text(
               'Mark all read',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            style: TextButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                ),
               ),
             ),
           ),
@@ -352,24 +326,27 @@ class AlertsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _AlertItem(
-            name: 'Mom',
+            type: 'info',
+            from: 'Mom',
             time: '2 hours ago',
             message: 'I arrived safely at home',
-            avatarUrl: 'https://i.pravatar.cc/150?img=5',
+            isRead: false,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           _AlertItem(
-            name: 'Sarah',
+            type: 'warning',
+            from: 'Sarah',
             time: 'Yesterday',
             message: 'Running late, might need a pickup soon',
-            avatarUrl: 'https://i.pravatar.cc/150?img=6',
+            isRead: false,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           _AlertItem(
-            name: 'Liza',
+            type: 'emergency',
+            from: 'Liza',
             time: '2 days ago',
             message: 'Heading to work, will be back by 6',
-            avatarUrl: 'https://i.pravatar.cc/150?img=7',
+            isRead: true,
           ),
         ],
       ),
@@ -378,68 +355,121 @@ class AlertsScreen extends StatelessWidget {
 }
 
 class _AlertItem extends StatelessWidget {
-  final String name;
+  final String type;
+  final String from;
   final String time;
   final String message;
-  final String avatarUrl;
+  final bool isRead;
 
   const _AlertItem({
-    required this.name,
+    required this.type,
+    required this.from,
     required this.time,
     required this.message,
-    required this.avatarUrl,
+    required this.isRead,
   });
 
   @override
   Widget build(BuildContext context) {
+    Color borderColor;
+    Color iconColor;
+    IconData icon;
+
+    switch (type) {
+      case 'info':
+        borderColor = Theme.of(context).colorScheme.primary;
+        iconColor = Theme.of(context).colorScheme.primary;
+        icon = Icons.info_outline;
+        break;
+      case 'warning':
+        borderColor = Colors.amber;
+        iconColor = Colors.amber;
+        icon = Icons.warning_amber_outlined;
+        break;
+      case 'emergency':
+        borderColor = Colors.red;
+        iconColor = Colors.red;
+        icon = Icons.error_outline;
+        break;
+      default:
+        borderColor = Theme.of(context).colorScheme.primary;
+        iconColor = Theme.of(context).colorScheme.primary;
+        icon = Icons.info_outline;
+    }
+
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: Colors.grey.withOpacity(0.2),
-        ),
+        side: BorderSide(color: Colors.grey.withOpacity(0.2)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundImage: NetworkImage(avatarUrl),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        name,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        time,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    message,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
+      color: isRead ? Colors.grey[50] : Colors.white,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(left: BorderSide(color: borderColor, width: 4)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: iconColor, size: 20),
               ),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              from,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            if (!isRead) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        Text(
+                          time,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      message,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight:
+                            isRead ? FontWeight.normal : FontWeight.w500,
+                        color: isRead ? Colors.grey[700] : Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -455,9 +485,9 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'Settings',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
       body: ListView(
@@ -483,11 +513,7 @@ class SettingsScreen extends StatelessWidget {
             title: 'Help & Support',
             onTap: () {},
           ),
-          _SettingsTile(
-            icon: Icons.info_outline,
-            title: 'About',
-            onTap: () {},
-          ),
+          _SettingsTile(icon: Icons.info_outline, title: 'About', onTap: () {}),
         ],
       ),
     );
@@ -511,9 +537,7 @@ class _SettingsTile extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: Colors.grey.withOpacity(0.2),
-        ),
+        side: BorderSide(color: Colors.grey.withOpacity(0.2)),
       ),
       child: ListTile(
         leading: Icon(icon),
