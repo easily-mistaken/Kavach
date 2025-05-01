@@ -3,6 +3,10 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'dart:ui' as ui;
 
 void main() {
   runApp(const AvelaApp());
@@ -69,6 +73,7 @@ class _MainScreenState extends State<MainScreen> {
         infoWindow: InfoWindow(
           title: 'You',
           snippet: 'Current location',
+          onTap: () => _showContactInfo('You', '555-0122'),
         ),
       ),
       Marker(
@@ -82,13 +87,13 @@ class _MainScreenState extends State<MainScreen> {
         ),
       ),
       Marker(
-        markerId: const MarkerId('sarah'),
+        markerId: const MarkerId('liza'),
         position: const LatLng(37.42696133580664, -122.086749655962),
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose),
         infoWindow: InfoWindow(
-          title: 'Sarah',
+          title: 'Liza',
           snippet: 'Updated 2 minutes ago',
-          onTap: () => _showContactInfo('Sarah', '555-0124'),
+          onTap: () => _showContactInfo('Liza', '555-0124'),
         ),
       ),
     };
@@ -138,39 +143,75 @@ class _MainScreenState extends State<MainScreen> {
   void _showContactInfo(String name, String phoneNumber) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(top: 8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(20),
+          ),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              name,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Updated just now',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundImage: NetworkImage(
+                      name == 'You'
+                          ? 'https://i.pravatar.cc/150?img=1'
+                          : name == 'Mom'
+                              ? 'https://i.pravatar.cc/150?img=2'
+                              : 'https://i.pravatar.cc/150?img=6',
+                    ),
                   ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _ContactActionButton(
-                  icon: Icons.call_outlined,
-                  label: 'Call',
-                  onPressed: () => _makePhoneCall(phoneNumber),
-                ),
-                _ContactActionButton(
-                  icon: Icons.message_outlined,
-                  label: 'Message',
-                  onPressed: () => _sendMessage(phoneNumber),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  Text(
+                    name,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Updated just now',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _ContactActionButton(
+                        icon: Icons.call_outlined,
+                        label: 'Call',
+                        onPressed: () => _makePhoneCall(phoneNumber),
+                      ),
+                      _ContactActionButton(
+                        icon: Icons.message_outlined,
+                        label: 'Message',
+                        onPressed: () => _sendMessage(phoneNumber),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
           ],
         ),
@@ -202,6 +243,40 @@ class _MainScreenState extends State<MainScreen> {
     mapController = controller;
   }
 
+  void _showSOSConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Send SOS Alert'),
+        content: const Text(
+          'This will send an emergency alert to all your trusted connections. Are you sure you want to proceed?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Implement SOS alert sending
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('SOS alert sent to your trusted connections'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('Send SOS'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -227,54 +302,123 @@ class _MainScreenState extends State<MainScreen> {
                 top: 60,
                 left: 20,
                 right: 20,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(26),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      const CircleAvatar(
-                        radius: 20,
-                        backgroundImage: NetworkImage(
-                          'https://i.pravatar.cc/150?img=1',
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                child: Column(
+                  children: [
+                    // Avela Branding
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
                           children: [
-                            Text(
-                              'Welcome back, Sarah',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.location_on_rounded,
+                                color: Colors.white,
+                                size: 24,
+                              ),
                             ),
+                            const SizedBox(width: 8),
                             Text(
-                              'Your family is safe',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: Colors.grey[600]),
+                              'AVELA',
+                              style: GoogleFonts.poppins(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.5,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
                             ),
                           ],
                         ),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(26),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.location_searching_rounded,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Live',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Welcome Message
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.notifications_outlined),
-                        onPressed: () {},
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(26),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                      child: Row(
+                        children: [
+                          const CircleAvatar(
+                            radius: 20,
+                            backgroundImage: NetworkImage(
+                              'https://i.pravatar.cc/150?img=1',
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Welcome back, Sarah',
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  'Your family is safe',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.notifications_outlined),
+                            onPressed: () {},
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -318,9 +462,7 @@ class _MainScreenState extends State<MainScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Show SOS options
-        },
+        onPressed: _showSOSConfirmation,
         backgroundColor: Theme.of(context).colorScheme.secondary,
         child: const Icon(Icons.emergency_outlined),
       ),
@@ -342,73 +484,87 @@ class CirclesScreen extends StatelessWidget {
               ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
+          FilledButton.icon(
             onPressed: () {
               // Show add circle/contact dialog
             },
+            icon: const Icon(Icons.add),
+            label: const Text('Create'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
           ),
+          const SizedBox(width: 16),
         ],
       ),
-      body: ListView(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        children: [
-          // Groups Section
-          Text(
-            'Groups',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 16),
-          _CircleCard(
-            name: 'Family',
-            members: 4,
-            imageUrl: 'https://i.pravatar.cc/150?img=2',
-            isGroup: true,
-          ),
-          const SizedBox(height: 12),
-          _CircleCard(
-            name: 'Close Friends',
-            members: 3,
-            imageUrl: 'https://i.pravatar.cc/150?img=3',
-            isGroup: true,
-          ),
-          const SizedBox(height: 12),
-          _CircleCard(
-            name: 'Work Team',
-            members: 5,
-            imageUrl: 'https://i.pravatar.cc/150?img=4',
-            isGroup: true,
-          ),
-          const SizedBox(height: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Groups Section
+            Text(
+              'Groups',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            _CircleCard(
+              name: 'Family',
+              members: 4,
+              imageUrl: 'https://i.pravatar.cc/150?img=2',
+              isGroup: true,
+            ),
+            const SizedBox(height: 12),
+            _CircleCard(
+              name: 'Close Friends',
+              members: 3,
+              imageUrl: 'https://i.pravatar.cc/150?img=3',
+              isGroup: true,
+            ),
+            const SizedBox(height: 12),
+            _CircleCard(
+              name: 'Work Team',
+              members: 5,
+              imageUrl: 'https://i.pravatar.cc/150?img=4',
+              isGroup: true,
+            ),
+            const SizedBox(height: 24),
 
-          // Individual Contacts Section
-          Text(
-            'Individual Contacts',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 16),
-          _CircleCard(
-            name: 'Mom',
-            imageUrl: 'https://i.pravatar.cc/150?img=5',
-            isGroup: false,
-          ),
-          const SizedBox(height: 12),
-          _CircleCard(
-            name: 'Sarah',
-            imageUrl: 'https://i.pravatar.cc/150?img=6',
-            isGroup: false,
-          ),
-          const SizedBox(height: 12),
-          _CircleCard(
-            name: 'John',
-            imageUrl: 'https://i.pravatar.cc/150?img=7',
-            isGroup: false,
-          ),
-        ],
+            // Individual Contacts Section
+            Text(
+              'Individual Contacts',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            _CircleCard(
+              name: 'Mom',
+              imageUrl: 'https://i.pravatar.cc/150?img=5',
+              isGroup: false,
+            ),
+            const SizedBox(height: 12),
+            _CircleCard(
+              name: 'Liza',
+              imageUrl: 'https://i.pravatar.cc/150?img=6',
+              isGroup: false,
+            ),
+            const SizedBox(height: 12),
+            _CircleCard(
+              name: 'John',
+              imageUrl: 'https://i.pravatar.cc/150?img=7',
+              isGroup: false,
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
       ),
     );
   }
@@ -527,7 +683,7 @@ class AlertsScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _AlertItem(
             type: 'warning',
-            from: 'Sarah',
+            from: 'Anna',
             time: 'Yesterday',
             message: 'Running late, might need a pickup soon',
             isRead: false,
