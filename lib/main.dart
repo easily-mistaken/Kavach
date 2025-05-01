@@ -103,7 +103,7 @@ class _MainScreenState extends State<MainScreen> {
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withAlpha(26),
                         blurRadius: 10,
                         offset: const Offset(0, 5),
                       ),
@@ -259,7 +259,7 @@ class _GroupCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.withOpacity(0.2)),
+        side: BorderSide(color: Colors.grey.withAlpha(51)),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
@@ -315,7 +315,7 @@ class AlertsScreen extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                  color: Theme.of(context).colorScheme.primary.withAlpha(51),
                 ),
               ),
             ),
@@ -401,7 +401,7 @@ class _AlertItem extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.withOpacity(0.2)),
+        side: BorderSide(color: Colors.grey.withAlpha(51)),
       ),
       color: isRead ? Colors.grey[50] : Colors.white,
       child: Container(
@@ -416,7 +416,7 @@ class _AlertItem extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
+                  color: iconColor.withAlpha(26),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: iconColor, size: 20),
@@ -442,7 +442,7 @@ class _AlertItem extends StatelessWidget {
                                 width: 8,
                                 height: 8,
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.primary,
+                                  color: Theme.of(context).colorScheme.primary.withAlpha(26),
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -537,7 +537,7 @@ class _SettingsTile extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.withOpacity(0.2)),
+        side: BorderSide(color: Colors.grey.withAlpha(51)),
       ),
       child: ListTile(
         leading: Icon(icon),
